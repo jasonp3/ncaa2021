@@ -1,0 +1,473 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(devtools)
+library(tidyverse)
+library(ncaahoopR)
+library(gt)
+library(rpubs)
+library(rvest)
+```
+
+```{r}
+library(rvest)
+library(stringr)
+library(tidyr)
+
+url <- 'https://www.espn.com/mens-college-basketball/bpi/_/view/tournament'
+webpage <- read_html(url)
+
+bpi_table <- html_nodes(webpage, 'table')
+bpi <- html_table(sb_table)[[1]]
+head(bpi)
+View(bpi)
+
+bpi$`Champ Gm` <- as.numeric(sub("%", "",bpi$`Champ Gm`,fixed=TRUE))/100
+
+bpi <- bpi %>% mutate(EG = 1 * (1 - bpi$`Rd of 32`) + 2*(bpi$`Rd of 32` * (1-bpi$`Sweet 16`)) + 3*(bpi$`Sweet 16` * bpi$`Rd of 32` * (1-bpi$`Elite 8`)) + 4*(bpi$`Rd of 32` * bpi$`Sweet 16` * bpi$`Elite 8` * (1-bpi$`Final Four`)) + 5*(bpi$`Rd of 32` * bpi$`Sweet 16` * bpi$`Elite 8` * bpi$`Final Four` * (1 - bpi$`Champ Gm`)) + 6*(bpi$`Rd of 32` * bpi$`Sweet 16`*bpi$`Elite 8`*bpi$`Final Four`*bpi$`Champ Gm`))
+
+```
+
+```{r}
+url_2 <- 'https://www.espn.com/mens-college-basketball/bpi/_/view/tournament/page/2'
+webpage_2 <- read_html(url_2)
+
+bpi_table_2 <- html_nodes(webpage_2, 'table')
+bpi_2 <- html_table(bpi_table_2)[[1]]
+View(bpi_2)
+
+bpi_2 <- bpi_2[-(19:50), ]
+
+bpi_2$`Rd of 32` <- as.numeric(sub("%", "",bpi_2$`Rd of 32`,fixed=TRUE))/100
+
+bpi_2 <- bpi_2 %>% mutate(EG = 1 * (1 - bpi_2$`Rd of 32`) + 2*(bpi_2$`Rd of 32` * (1-bpi_2$`Sweet 16`)) + 3*(bpi_2$`Sweet 16` * bpi_2$`Rd of 32` * (1-bpi_2$`Elite 8`)) + 4*(bpi_2$`Rd of 32` * bpi_2$`Sweet 16` * bpi_2$`Elite 8` * (1-bpi_2$`Final Four`)) + 5*(bpi_2$`Rd of 32` * bpi_2$`Sweet 16` * bpi_2$`Elite 8` * bpi_2$`Final Four` * (1 - bpi_2$`Champ Gm`)) + 6*(bpi_2$`Rd of 32` * bpi_2$`Sweet 16`*bpi_2$`Elite 8`*bpi_2$`Final Four`*bpi_2$`Champ Gm`))
+
+EG_1 <- rbind(bpi, bpi_2)
+View(EG_1)
+
+playin <- EG_1[c(43,46,47,57,64,66,67,68),]
+View(playin)
+playin <- playin[,-11]
+
+vector <- c(1.753301664,1.774104576,1.451134925,1.382342912,1.604558266,1.525209316,1.486275127,1.40401)
+playin$EG <- vector
+
+EG_1 <- EG_1[-c(43,46,47,57,64,66,67,68),]
+EG_1 <- rbind(EG_1, playin)
+View(EG_1)
+
+EG <- EG_1 %>%  select(TEAM, Seed, Region, EG)
+View(EG)
+```
+
+```{r}
+#ACC
+
+url <- 'http://www.espn.com/mens-college-basketball/statistics/player/_/stat/scoring-per-game/year/2021/seasontype/2/group/2'
+webpage <- read_html(url)
+
+acc <- html_nodes(webpage, 'table')
+acct <- html_table(acc)[[1]]
+head(acct)
+View(acct)
+
+acct <- acct %>% select(X2,X3,X6)
+acct <- acct[-c(1,12,23,34),]
+
+
+
+url_1 <- 'http://www.espn.com/mens-college-basketball/statistics/player/_/stat/scoring-per-game/sort/avgPoints/group/2/count/41'
+webpage_1 <- read_html(url_1)
+
+acc_1 <- html_nodes(webpage_1, 'table')
+acct_1 <- html_table(acc_1)[[1]]
+
+acct_1 <- acct_1 %>% select(X2,X3,X6)
+acct_1 <- acct_1[-c(1,12,23,34),]
+View(acct_1)
+
+ACCFULL <- rbind(acct, acct_1)
+names(ACCFULL) <- c("Player", "Team", "PPG")
+View(ACCFULL)
+```
+
+```{r}
+# Big 10
+
+url <- 'http://www.espn.com/mens-college-basketball/statistics/player/_/stat/scoring-per-game/year/2021/seasontype/2/group/7'
+webpage <- read_html(url)
+
+bigten <- html_nodes(webpage, 'table')
+bigtent <- html_table(bigten)[[1]]
+
+
+bigtent <- bigtent %>% select(X2,X3,X6)
+bigtent <- bigtent[-c(1,12,23,34),]
+
+
+
+url_1 <- 'http://www.espn.com/mens-college-basketball/statistics/player/_/stat/scoring-per-game/sort/avgPoints/group/7/count/41'
+webpage_1 <- read_html(url_1)
+
+bigten_1 <- html_nodes(webpage_1, 'table')
+bigtent_1 <- html_table(bigten_1)[[1]]
+
+bigtent_1 <- bigtent_1 %>% select(X2,X3,X6)
+bigtent_1 <- bigtent_1[-c(1,12,23,34),]
+
+BIGTENFULL <- rbind(bigtent, bigtent_1)
+names(BIGTENFULL) <- c("Player", "Team", "PPG")
+View(BIGTENFULL)
+```
+
+```{r}
+# Big 12
+
+url <- 'http://www.espn.com/mens-college-basketball/statistics/player/_/stat/scoring-per-game/year/2021/seasontype/2/group/8'
+webpage <- read_html(url)
+
+bigtwelve <- html_nodes(webpage, 'table')
+bigtwelvet <- html_table(bigtwelve)[[1]]
+
+
+bigtwelvet <- bigtwelvet %>% select(X2,X3,X6)
+bigtwelvet <- bigtwelvet[-c(1,12,23,34),]
+
+
+
+url_1 <- 'http://www.espn.com/mens-college-basketball/statistics/player/_/stat/scoring-per-game/sort/avgPoints/group/8/count/41'
+webpage_1 <- read_html(url_1)
+
+bigtwelve_1 <- html_nodes(webpage_1, 'table')
+bigtwelvet_1 <- html_table(bigtwelve_1)[[1]]
+
+bigtwelvet_1 <- bigtwelvet_1 %>% select(X2,X3,X6)
+bigtwelvet_1 <- bigtwelvet_1[-c(1,12,23,34),]
+
+BIGTWELVEFULL <- rbind(bigtwelvet, bigtwelvet_1)
+names(BIGTWELVEFULL) <- c("Player", "Team", "PPG")
+View(BIGTWELVEFULL)
+```
+
+```{r}
+# Big 10
+
+url <- 'http://www.espn.com/mens-college-basketball/statistics/player/_/stat/scoring-per-game/year/2021/seasontype/2/group/7'
+webpage <- read_html(url)
+
+bigten <- html_nodes(webpage, 'table')
+bigtent <- html_table(bigten)[[1]]
+
+
+bigtent <- bigtent %>% select(X2,X3,X6)
+bigtent <- bigtent[-c(1,12,23,34),]
+
+
+
+url_1 <- 'http://www.espn.com/mens-college-basketball/statistics/player/_/stat/scoring-per-game/sort/avgPoints/group/7/count/41'
+webpage_1 <- read_html(url_1)
+
+bigten_1 <- html_nodes(webpage_1, 'table')
+bigtent_1 <- html_table(bigten_1)[[1]]
+
+bigtent_1 <- bigtent_1 %>% select(X2,X3,X6)
+bigtent_1 <- bigtent_1[-c(1,12,23,34),]
+
+BIGTENFULL <- rbind(bigtent, bigtent_1)
+names(BIGTENFULL) <- c("Player", "Team", "PPG")
+View(BIGTENFULL)
+```
+
+```{r}
+# SEC
+
+url <- 'http://www.espn.com/mens-college-basketball/statistics/player/_/stat/scoring-per-game/year/2021/seasontype/2/group/23'
+webpage <- read_html(url)
+
+SEC <- html_nodes(webpage, 'table')
+SECt <- html_table(SEC)[[1]]
+
+
+SECt <- SECt %>% select(X2,X3,X6)
+SECt <- SECt[-c(1,12,23,34),]
+
+
+
+url_1 <- 'http://www.espn.com/mens-college-basketball/statistics/player/_/stat/scoring-per-game/sort/avgPoints/group/23/count/41'
+webpage_1 <- read_html(url_1)
+
+SEC_1 <- html_nodes(webpage_1, 'table')
+SECt_1 <- html_table(SEC_1)[[1]]
+
+SECt_1 <- SECt_1 %>% select(X2,X3,X6)
+SECt_1 <- SECt_1[-c(1,12,23,34),]
+
+SECFULL <- rbind(SECt, SECt_1)
+names(SECFULL) <- c("Player", "Team", "PPG")
+View(SECFULL)
+```
+
+```{r}
+# PAC 12
+
+url <- 'http://www.espn.com/mens-college-basketball/statistics/player/_/stat/scoring-per-game/year/2021/seasontype/2/group/21'
+webpage <- read_html(url)
+
+pactwelve <- html_nodes(webpage, 'table')
+pactwelvet <- html_table(pactwelve)[[1]]
+
+
+pactwelvet <- pactwelvet %>% select(X2,X3,X6)
+pactwelvet <- pactwelvet[-c(1,12,23,34),]
+
+
+
+url_1 <- 'http://www.espn.com/mens-college-basketball/statistics/player/_/stat/scoring-per-game/sort/avgPoints/group/21/count/41'
+webpage_1 <- read_html(url_1)
+
+pactwelve_1 <- html_nodes(webpage_1, 'table')
+pactwelvet_1 <- html_table(pactwelve_1)[[1]]
+
+pactwelvet_1 <- pactwelvet_1 %>% select(X2,X3,X6)
+pactwelvet_1 <- pactwelvet_1[-c(1,12,23,34),]
+
+PACTWELVEFULL <- rbind(pactwelvet, pactwelvet_1)
+names(PACTWELVEFULL) <- c("Player", "Team", "PPG")
+View(PACTWELVEFULL)
+```
+
+```{r}
+# Big East
+
+url <- 'http://www.espn.com/mens-college-basketball/statistics/player/_/stat/scoring-per-game/year/2021/seasontype/2/group/4'
+webpage <- read_html(url)
+
+bigeast <- html_nodes(webpage, 'table')
+bigeastt <- html_table(bigeast)[[1]]
+
+
+bigeastt <- bigeastt %>% select(X2,X3,X6)
+bigeastt <- bigeastt[-c(1,12,23,34),]
+
+
+
+url_1 <- 'http://www.espn.com/mens-college-basketball/statistics/player/_/stat/scoring-per-game/sort/avgPoints/group/4/count/41'
+webpage_1 <- read_html(url_1)
+
+bigeast_1 <- html_nodes(webpage_1, 'table')
+bigeastt_1 <- html_table(bigeast_1)[[1]]
+
+bigeastt_1 <- bigeastt_1 %>% select(X2,X3,X6)
+bigeastt_1 <- bigeastt_1[-c(1,12,23,34),]
+
+BIGEASTFULL <- rbind(bigeastt, bigeastt_1)
+names(BIGEASTFULL) <- c("Player", "Team", "PPG")
+View(BIGEASTFULL)
+```
+
+```{r}
+# American
+
+url <- 'http://www.espn.com/mens-college-basketball/statistics/player/_/stat/scoring-per-game/year/2021/seasontype/2/group/62'
+webpage <- read_html(url)
+
+american <- html_nodes(webpage, 'table')
+americant <- html_table(american)[[1]]
+
+
+americant <- americant %>% select(X2,X3,X6)
+americant <- americant[-c(1,12,23,34),]
+
+
+
+url_1 <- 'http://www.espn.com/mens-college-basketball/statistics/player/_/stat/scoring-per-game/sort/avgPoints/group/62/count/41'
+webpage_1 <- read_html(url_1)
+
+american_1 <- html_nodes(webpage_1, 'table')
+americant_1 <- html_table(american_1)[[1]]
+
+americant_1 <- americant_1 %>% select(X2,X3,X6)
+americant_1 <- americant_1[-c(1,12,23,34),]
+
+AMERICANFULL <- rbind(americant, americant_1)
+names(AMERICANFULL) <- c("Player", "Team", "PPG")
+View(AMERICANFULL)
+```
+
+```{r}
+# WCC
+
+url <- 'http://www.espn.com/mens-college-basketball/statistics/player/_/stat/scoring-per-game/year/2021/seasontype/2/group/29'
+webpage <- read_html(url)
+
+WCC <- html_nodes(webpage, 'table')
+WCCt <- html_table(WCC)[[1]]
+
+
+WCCt <- WCCt %>% select(X2,X3,X6)
+WCCt <- WCCt[-c(1,12,23,34),]
+
+
+
+url_1 <- 'http://www.espn.com/mens-college-basketball/statistics/player/_/stat/scoring-per-game/sort/avgPoints/group/29/count/41'
+webpage_1 <- read_html(url_1)
+
+WCC_1 <- html_nodes(webpage_1, 'table')
+WCCt_1 <- html_table(WCC_1)[[1]]
+
+WCCt_1 <- WCCt_1 %>% select(X2,X3,X6)
+WCCt_1 <- WCCt_1[-c(1,12,23,34),]
+
+WCCFULL <- rbind(WCCt, WCCt_1)
+names(WCCFULL) <- c("Player", "Team", "PPG")
+View(WCCFULL)
+```
+
+```{r}
+# Combined
+
+POWER <- rbind(WCCFULL, AMERICANFULL, BIGEASTFULL, BIGTENFULL, BIGTWELVEFULL, PACTWELVEFULL, ACCFULL, SECFULL, MVFULL, MWFULL, ATENFULL)
+View(POWER)
+
+# abb <- c("GONZ", "BAY", "HOU", "ILL", "IOWA", "MICH", "OSU", "ALA", "VILL", "TENN", "UVA", "TTU", "CREI", "ARK", "KU", "TEX", "CONN", "FSU", "COLO", "WVU", "LUC", "PUR", "USC", "WISC", "LSU", "SBU", "SDSU", "UNC", "BYU", "OU", "FLA", "SYR", "OKST", "VT", "ORE", "MD", "CLEM", "GT", "RUTG", "COLG", "MIZ", "VCU", "USU", "GTWN", "LIB", "UNT", "UCSB", "ACU", "UNCG", "GCU", "WIN", "ORST", "OHIO", "EWU", "IONA", "DREX", "MORE", "ORU", "CLEV", "HART", "UCLA", "DRKE", "MSU", "WICH", "APP", "MSM", "TXSO", "NORF")
+
+# EG$Abbv <- abb
+# EG <- EG %>% select(Abbv, Seed, Region, EG)
+# names(EG) <- c("Team", "Seed", "Region", "EG")
+
+NEW <- merge(POWER, EG, by = "Team")
+View(NEW)
+
+NEW <- transform(NEW, PPG = as.numeric(PPG),
+                 EG = as.numeric(EG),
+                 Seed = as.numeric(Seed))
+
+NEW <- NEW %>% mutate(EP = PPG * EG) %>% 
+  arrange(desc(EP))
+
+View(NEW)
+
+ df <- data.frame("CONN", "James Bouknight, G", 19.0, 7, "East",  1.887453, 1.887453*19.0)
+ names(df) <- c("Team", "Player", "PPG", "Seed", "Region", "EG",  "EP")
+ NEW <- rbind(NEW, df)
+ 
+ df2 <- data.frame("MSU", "Aaron Henry, G", 15.3, 11, "East", 1.451135, 1.451135*15.3)
+ names(df2) <- c("Team", "Player", "PPG", "Seed", "Region", "EG", "EP")
+ NEW <- rbind(NEW, df2)
+ 
+ NEW <- NEW %>% arrange(desc(EP))
+```
+
+```{r}
+# Mountain West
+
+url <- 'http://www.espn.com/mens-college-basketball/statistics/player/_/stat/scoring-per-game/year/2021/seasontype/2/group/44'
+webpage <- read_html(url)
+
+MW <- html_nodes(webpage, 'table')
+MWt <- html_table(MW)[[1]]
+
+
+MWt <- MWt %>% select(X2,X3,X6)
+MWt <- MWt[-c(1,12,23,34),]
+
+
+
+url_1 <- 'http://www.espn.com/mens-college-basketball/statistics/player/_/stat/scoring-per-game/sort/avgPoints/group/44/count/41'
+webpage_1 <- read_html(url_1)
+
+MW_1 <- html_nodes(webpage_1, 'table')
+MWt_1 <- html_table(MW_1)[[1]]
+
+MWt_1 <- MWt_1 %>% select(X2,X3,X6)
+MWt_1 <- MWt_1[-c(1,12,23,34),]
+
+MWFULL <- rbind(MWt, MWt_1)
+names(MWFULL) <- c("Player", "Team", "PPG")
+View(MWFULL)
+```
+
+```{r}
+#A 10
+
+url <- 'http://www.espn.com/mens-college-basketball/statistics/player/_/stat/scoring-per-game/year/2021/seasontype/2/group/3'
+webpage <- read_html(url)
+
+Aten <- html_nodes(webpage, 'table')
+Atent <- html_table(Aten)[[1]]
+
+
+Atent <- Atent %>% select(X2,X3,X6)
+Atent <- Atent[-c(1,12,23,34),]
+
+
+
+url_1 <- 'http://www.espn.com/mens-college-basketball/statistics/player/_/stat/scoring-per-game/sort/avgPoints/group/3/count/41'
+webpage_1 <- read_html(url_1)
+
+Aten_1 <- html_nodes(webpage_1, 'table')
+Atent_1 <- html_table(Aten_1)[[1]]
+
+Atent_1<- Atent_1 %>% select(X2,X3,X6)
+Atent_1 <- Atent_1[-c(1,12,23,34),]
+
+ATENFULL <- rbind(Atent, Atent_1)
+names(ATENFULL) <- c("Player", "Team", "PPG")
+View(ATENFULL)
+```
+
+```{r}
+# Missouri Valley
+
+url <- 'http://www.espn.com/mens-college-basketball/statistics/player/_/stat/scoring-per-game/year/2021/seasontype/2/group/18'
+webpage <- read_html(url)
+
+MV <- html_nodes(webpage, 'table')
+MVt <- html_table(MV)[[1]]
+
+
+MVt <- MVt %>% select(X2,X3,X6)
+MVt <- MVt[-c(1,12,23,34),]
+
+
+
+url_1 <- 'http://www.espn.com/mens-college-basketball/statistics/player/_/stat/scoring-per-game/sort/avgPoints/group/18/count/41'
+webpage_1 <- read_html(url_1)
+
+MV_1 <- html_nodes(webpage_1, 'table')
+MVt_1 <- html_table(MV_1)[[1]]
+
+MVt_1 <- MVt_1 %>% select(X2,X3,X6)
+MVt_1 <- MVt_1[-c(1,12,23,34),]
+
+MVFULL <- rbind(MVt, MVt_1)
+names(MVFULL) <- c("Player", "Team", "PPG")
+View(MVFULL)
+```
+
+```{r}
+options(digits = 3)
+Midwest <- NEW %>% 
+  filter(Region == "Midwest") %>% 
+  select(-Region, -EG)
+library(gt)
+gt_tbl <- gt(data = Midwest)
+
+gt_tbl <- gt_tbl %>% 
+  tab_header(title = "Midwest Region")
+gt_tbl
+
+?gt::gtsave
+gtsave(gt_tbl, filename = "midwest.html")
+```
+
+```{r}
+install.packages("gridExtra")
+pdf("test.pdf", height = 11, width = 10)
+gridExtra::grid.table(gt_tbl)
+dev.off()
+```
+
